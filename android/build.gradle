@@ -84,9 +84,24 @@ android {
 
 repositories {
   mavenCentral()
+  flatDir {
+    dirs 'libs'
+  }
 }
 
 dependencies {
   implementation project(':expo-modules-core')
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${getKotlinVersion()}"
+
+  implementation "com.google.android.gms:play-services-base:18.3.0"
+  implementation "com.google.android.gms:play-services-pay:16.4.0"
+  implementation 'com.google.android.gms:play-services-wallet:19.3.0'
+//  implementation 'com.google.android.gms:play-services-tapandpay:18.3.3@aar'
+
+//  implementation fileTree(include: ['*.jar'], dir: 'libs')
+//  implementation fileTree(include: ['*.aar'], dir: 'libs')
+
+  implementation files('libs/play-services-tapandpay-18.3.3.aar')
+
+  implementation 'com.facebook.react:react-native:+'
 }

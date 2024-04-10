@@ -1,26 +1,53 @@
-import { NativeModulesProxy, EventEmitter, Subscription } from 'expo-modules-core';
-
 // Import the native module. On web, it will be resolved to ExpoInAppProvisioning.web.ts
 // and on native platforms to ExpoInAppProvisioning.ts
-import ExpoInAppProvisioningModule from './ExpoInAppProvisioningModule';
-import ExpoInAppProvisioningView from './ExpoInAppProvisioningView';
-import { ChangeEventPayload, ExpoInAppProvisioningViewProps } from './ExpoInAppProvisioning.types';
+import { Platform } from "react-native";
 
-// Get the native constant value.
-export const PI = ExpoInAppProvisioningModule.PI;
+import ExpoInAppProvisioningModule from "./ExpoInAppProvisioningModule";
 
-export function hello(): string {
-  return ExpoInAppProvisioningModule.hello();
-}
+export const getTokenStatus = async (token: string): Promise<string> => {
+  if (Platform.OS === "ios") {
+    return "";
+  }
+  return await ExpoInAppProvisioningModule.getTokenStatus(token);
+};
 
-export async function setValueAsync(value: string) {
-  return await ExpoInAppProvisioningModule.setValueAsync(value);
-}
+export const getActiveWalletId = async (): Promise<string> => {
+  if (Platform.OS === "ios") {
+    return "";
+  }
+  return await ExpoInAppProvisioningModule.getActiveWalletId();
+};
 
-const emitter = new EventEmitter(ExpoInAppProvisioningModule ?? NativeModulesProxy.ExpoInAppProvisioning);
+export const getStableHardwareId = async (): Promise<string> => {
+  if (Platform.OS === "ios") {
+    return "";
+  }
+  return await ExpoInAppProvisioningModule.getStableHardwareId();
+};
 
-export function addChangeListener(listener: (event: ChangeEventPayload) => void): Subscription {
-  return emitter.addListener<ChangeEventPayload>('onChange', listener);
-}
-
-export { ExpoInAppProvisioningView, ExpoInAppProvisioningViewProps, ChangeEventPayload };
+export const pushProvision = async (
+  opc: string,
+  name: string,
+  lastDigits: string,
+  address: string,
+  city: string,
+  state: string,
+  countryCode: string,
+  postalCode: string,
+  phone: string,
+): Promise<boolean> => {
+  if (Platform.OS === "ios") {
+    return false;
+  }
+  return await ExpoInAppProvisioningModule.pushProvision(
+    opc,
+    name,
+    lastDigits,
+    address,
+    city,
+    state,
+    countryCode,
+    postalCode,
+    phone,
+  );
+};
