@@ -68,6 +68,14 @@ export const initialize = async (
   return { walletId, hardwareId };
 };
 
+export const dismiss = async (): Promise<boolean> => {
+  if (Platform.OS === "ios") {
+    await ExpoInAppProvisioningModule.dismissAddPaymentPassViewController();
+    return true;
+  }
+  return false;
+};
+
 export const openWallet = async (): Promise<boolean> => {
   if (Platform.OS === "ios") {
     return await ExpoInAppProvisioningModule.openWallet();
