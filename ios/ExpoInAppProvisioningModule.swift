@@ -179,6 +179,7 @@ class PaymentPass: NSObject {
             }
             
             rootViewController.dismiss(animated: true) {
+                self.hasBeenInitialized = false
                 promise.resolve()
             }
         }
