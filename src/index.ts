@@ -49,16 +49,16 @@ export type InitializeResult = AndroidInitializeResult | IOSInitializeResult;
 
 export const initialize = async (
   props?: InitializeProps,
-): Promise<InitializeResult> => {
+): Promise<InitializeResult | null> => {
   if (Platform.OS === "ios") {
-    const { leafCertificate, nonce, nonceSignature, subCACertificate } =
-      await ExpoInAppProvisioningModule.presentAddPaymentPassViewController(
+    const res =
+      (await ExpoInAppProvisioningModule.presentAddPaymentPassViewController(
         props?.cardholderName,
         props?.localizedDescription,
         props?.lastFour,
         props?.cardId,
-      );
-    return { leafCertificate, nonce, nonceSignature, subCACertificate };
+      )) as IOSInitializeResult | null;
+    return res;
   }
   let hardwareId: string | null = null;
   const walletId = await getActiveWalletId();

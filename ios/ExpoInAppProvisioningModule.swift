@@ -61,6 +61,7 @@ class PaymentPass: NSObject {
     var addPaymentPassRequestCompletionHandler: ((PKAddPaymentPassRequest) -> Void)?
     var successCallback: EXPromiseResolveBlock?
     var errorCallback: EXPromiseRejectBlock?
+    var hasBeenInitialized = false
     
     func canAddPaymentPass() -> Bool {
         if #available(iOS 9.0, *) {
@@ -162,6 +163,7 @@ extension PaymentPass: PKAddPaymentPassViewControllerDelegate {
     func addPaymentPassViewController(_ controller: PKAddPaymentPassViewController, generateRequestWithCertificateChain certificates: [Data], nonce: Data, nonceSignature: Data, completionHandler handler: @escaping (PKAddPaymentPassRequest) -> Void) {
         NSLog("addPaymentPassViewController delegate to generate cert chain, nonce, and nonce signature")
         
+        self.hasBeenInitialized = true
         self.addPaymentPassRequestCompletionHandler = handler
         
         // The leaf certificate will be the first element of that array and the sub-CA certificate will follow.
@@ -181,6 +183,7 @@ extension PaymentPass: PKAddPaymentPassViewControllerDelegate {
             NSLog("Event send to JS with certs, nonce, and nonceSignature")
             self.successCallback?(args)
         } else {
+            self.hasBeenInitialized = false
             self.errorCallback?("Error getting data", "Could not initialize process", nil)
         }
     }
@@ -192,9 +195,15 @@ extension PaymentPass: PKAddPaymentPassViewControllerDelegate {
         controller.dismiss(animated: true) {
             if let pass = pass {
                 self.successCallback?(pass)
-            } else {
-                self.errorCallback?("addingPassFailed", "Failed to add card", error)
+                return
             }
+            if self.hasBeenInitialized, let error = error {
+                self.errorCallback?("addingPassFailed", "Failed to add card", error)
+                return
+            }
+            // cancelled
+            self.successCallback?(nil)
+            self.hasBeenInitialized = false
         }
     }
 }
