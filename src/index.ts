@@ -94,7 +94,14 @@ export const canAddCard = async (token: string): Promise<StatusCode> => {
     }
     return StatusCode.NEEDS_SETUP;
   }
-  return await getTokenStatus(token);
+  try {
+    return await getTokenStatus(token);
+  } catch (e) {
+    if (e.message === "Token not found") {
+      return StatusCode.AVAILABLE;
+    }
+    return StatusCode.UNAVAILABLE;
+  }
 };
 
 const getTokenStatus = async (token: string): Promise<StatusCode> => {
