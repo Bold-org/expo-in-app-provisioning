@@ -2,54 +2,65 @@ import ExpoModulesCore
 import PassKit
 
 public class ExpoInAppProvisioningModule: Module {
-  var addPaymentPassRequestCompletionHandler: ((PKAddPaymentPassRequest) -> Void)?
-
-  public func definition() -> ModuleDefinition {
-      Name("ExpoInAppProvisioning")
-
-      AsyncFunction("isAvailable") { () -> Bool in
-          return canAddPaymentPass()
-      }
-      
-      AsyncFunction("canAddCard") { (cardId: String) -> Bool in
-        if !canAddPaymentPass() {
-            return false
+    var paymentPass = PaymentPass()
+    
+    public func definition() -> ModuleDefinition {
+        Name("ExpoInAppProvisioning")
+        
+        AsyncFunction("openWallet") { () -> Bool in
+            return paymentPass.openWallet()
         }
-        return canAddPaymentPass(withPrimaryAccountIdentifier: cardId)
-      }
-      
-      AsyncFunction("presentAddPaymentPassViewController") { (
-        cardholderName: String,
-        localizedDescription: String,
-        primaryAccountSuffix: String,
-        primaryAccountIdentifier: String,
-        promise: Promise
-      ) throws -> Promise in
-          presentAddPaymentPassViewController(
-              cardholderName: cardholderName,
-              localizedDescription: localizedDescription,
-              primaryAccountSuffix: primaryAccountSuffix,
-              primaryAccountIdentifier: primaryAccountIdentifier,
-              promise: promise
-          )
-          return promise
-      }
-      
-      AsyncFunction("pushProvision") { (
-        activationDataString: String,
-        encryptedPassDataString: String,
-        ephemeralPublicKeyString: String,
-        promise: Promise
-      ) throws -> Promise in
-          callAddPaymentPassRequestHandler(
+        
+        AsyncFunction("isAvailable") { () -> Bool in
+            return paymentPass.canAddPaymentPass()
+        }
+        
+        AsyncFunction("canAddCard") { (cardId: String) -> Bool in
+            if !paymentPass.canAddPaymentPass() {
+                return false
+            }
+            return paymentPass.canAddPaymentPass(withPrimaryAccountIdentifier: cardId)
+        }
+        
+        AsyncFunction("presentAddPaymentPassViewController") { (
+            cardholderName: String,
+            localizedDescription: String,
+            primaryAccountSuffix: String,
+            primaryAccountIdentifier: String,
+            promise: Promise
+        ) throws -> Promise in
+            paymentPass.presentAddPaymentPassViewController(
+                cardholderName: cardholderName,
+                localizedDescription: localizedDescription,
+                primaryAccountSuffix: primaryAccountSuffix,
+                primaryAccountIdentifier: primaryAccountIdentifier,
+                promise: promise
+            )
+            return promise
+        }
+        
+        AsyncFunction("pushProvision") { (
+            activationDataString: String,
+            encryptedPassDataString: String,
+            ephemeralPublicKeyString: String,
+            promise: Promise
+        ) throws -> Promise in
+            paymentPass.callAddPaymentPassRequestHandler(
                 activationDataString: activationDataString,
                 encryptedPassDataString: encryptedPassDataString,
                 ephemeralPublicKeyString: ephemeralPublicKeyString,
                 promise: promise
-          )
-          return promise
-      }
+            )
+            return promise
+        }
     }
+}
+
+
+class PaymentPass: NSObject {
+    var addPaymentPassRequestCompletionHandler: ((PKAddPaymentPassRequest) -> Void)?
+    var successCallback: EXPromiseResolveBlock?
+    var errorCallback: EXPromiseRejectBlock?
     
     func canAddPaymentPass() -> Bool {
         if #available(iOS 9.0, *) {
@@ -71,6 +82,16 @@ public class ExpoInAppProvisioningModule: Module {
         }
     }
     
+    func openWallet() -> Bool {
+        let library = PKPassLibrary()
+        if #available(iOS 8.3, *) {
+            library.openPaymentSetup()
+            return true
+        } else {
+            return false
+        }
+    }
+    
     func presentAddPaymentPassViewController(
         cardholderName: String,
         localizedDescription: String,
@@ -78,25 +99,26 @@ public class ExpoInAppProvisioningModule: Module {
         primaryAccountIdentifier: String,
         promise: Promise
     ) {
-        let configuration = PKAddPaymentPassRequestConfiguration(encryptionScheme: .ECC_V2)
+        successCallback = promise.resolve
+        errorCallback = promise.legacyRejecter
         
+        let configuration = PKAddPaymentPassRequestConfiguration(encryptionScheme: .ECC_V2)
         configuration!.cardholderName = cardholderName
         configuration!.localizedDescription = localizedDescription
         configuration!.paymentNetwork = .visa
         configuration!.primaryAccountSuffix = primaryAccountSuffix
         configuration!.primaryAccountIdentifier = primaryAccountIdentifier
-        let delegate = AddPaymentPassViewControllerDelegate(promise: promise, completionHandler: addPaymentPassRequestCompletionHandler)
-        let passView = PKAddPaymentPassViewController(requestConfiguration: configuration!, delegate: delegate)
+        
+        let passView = PKAddPaymentPassViewController(
+            requestConfiguration: configuration!,
+            delegate: self
+        )
+        
         if passView != nil {
             DispatchQueue.main.async {
                 // Find the appropriate window to present the view controller
-                    if let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }) {
-                        window.rootViewController?.present(passView!, animated: true)
-//                        {
-//                            self.sendEvent(withName: "addToWalletViewShown", body: ["args": args])
-//                            promise.resolve(nil)
-//                            return
-//                        }
+                if let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }) {
+                    window.rootViewController?.present(passView!, animated: true)
                 }
             }
         } else {
@@ -110,6 +132,9 @@ public class ExpoInAppProvisioningModule: Module {
         ephemeralPublicKeyString: String,
         promise: Promise
     ) {
+        successCallback = promise.resolve
+        errorCallback = promise.legacyRejecter
+        
         if let activationData = Data(base64Encoded: activationDataString),
            let encryptedPassData = Data(base64Encoded: encryptedPassDataString),
            let ephemeralPublicKey = Data(base64Encoded: ephemeralPublicKeyString) {
@@ -121,7 +146,7 @@ public class ExpoInAppProvisioningModule: Module {
             
             if let completionHandler = self.addPaymentPassRequestCompletionHandler {
                 completionHandler(paymentPassRequest)
-                promise.resolve(paymentPassRequest)
+                promise.resolve(true)
             } else {
                 NSLog("Error : Completion handler was not set")
                 promise.reject("Completion handler was not set", "AddPaymentPassRequestCompletionHandler was not set")
@@ -133,19 +158,11 @@ public class ExpoInAppProvisioningModule: Module {
 
 }
 
-class AddPaymentPassViewControllerDelegate: NSObject, PKAddPaymentPassViewControllerDelegate {
-    let promise: Promise
-    var completionHandler: ((PKAddPaymentPassRequest) -> Void)?
-    
-    init(promise: Promise, completionHandler: ((PKAddPaymentPassRequest) -> Void)?) {
-        self.promise = promise
-        self.completionHandler = completionHandler
-    }
-    
+extension PaymentPass: PKAddPaymentPassViewControllerDelegate {
     func addPaymentPassViewController(_ controller: PKAddPaymentPassViewController, generateRequestWithCertificateChain certificates: [Data], nonce: Data, nonceSignature: Data, completionHandler handler: @escaping (PKAddPaymentPassRequest) -> Void) {
         NSLog("addPaymentPassViewController delegate to generate cert chain, nonce, and nonce signature")
         
-        self.completionHandler = handler
+        self.addPaymentPassRequestCompletionHandler = handler
         
         // The leaf certificate will be the first element of that array and the sub-CA certificate will follow.
         let leafCertData = certificates.first?.base64EncodedString()
@@ -162,10 +179,9 @@ class AddPaymentPassViewControllerDelegate: NSObject, PKAddPaymentPassViewContro
             ]
             
             NSLog("Event send to JS with certs, nonce, and nonceSignature")
-//            self.sendEvent(withName: "getPaymentPassInfo", body: ["args": args])
-            promise.resolve(args)
+            self.successCallback?(args)
         } else {
-            promise.reject("Error getting data", "Could not initialize process")
+            self.errorCallback?("Error getting data", "Could not initialize process", nil)
         }
     }
     
@@ -175,9 +191,9 @@ class AddPaymentPassViewControllerDelegate: NSObject, PKAddPaymentPassViewContro
         PKAddPaymentPassViewController().dismiss(animated: true)
         controller.dismiss(animated: true) {
             if let pass = pass {
-                self.promise.resolve(pass)
+                self.successCallback?(pass)
             } else {
-                self.promise.reject("addingPassFailed", "Failed to add card")
+                self.errorCallback?("addingPassFailed", "Failed to add card", error)
             }
         }
     }

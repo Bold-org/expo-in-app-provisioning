@@ -68,6 +68,13 @@ export const initialize = async (
   return { walletId, hardwareId };
 };
 
+export const openWallet = async (): Promise<boolean> => {
+  if (Platform.OS === "ios") {
+    return await ExpoInAppProvisioningModule.openWallet();
+  }
+  return false;
+};
+
 export const canAddCard = async (token: string): Promise<StatusCode> => {
   if (Platform.OS === "ios") {
     const isAvailable = await ExpoInAppProvisioningModule.isAvailable();
