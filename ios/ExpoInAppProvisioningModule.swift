@@ -38,6 +38,10 @@ public class ExpoInAppProvisioningModule: Module {
             )
             return promise
         }
+
+        AsyncFunction("dismissAddPaymentPassViewController") { (promise: Promise) -> Void in
+            return paymentPass.dismissAddPaymentPassViewController()
+        }
         
         AsyncFunction("pushProvision") { (
             activationDataString: String,
@@ -154,6 +158,29 @@ class PaymentPass: NSObject {
             }
         } else {
             promise.reject("Invalid base64 data", "Failed to decode base64 data")
+        }
+    }
+    
+    func dismissAddPaymentPassViewController(promise: Promise) {
+        DispatchQueue.main.async {
+            guard let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
+                promise.reject("AddPaymentPassViewController dismissal error", "AddPaymentPassViewController was not dismissed")
+                return
+            }
+            
+            guard let rootViewController = window.rootViewController else {
+                promise.reject("AddPaymentPassViewController dismissal error", "AddPaymentPassViewController was not dismissed")
+                return
+            }
+            
+            guard let presentedViewController = rootViewController.presentedViewController else {
+                promise.reject("AddPaymentPassViewController dismissal error", "AddPaymentPassViewController was not dismissed")
+                return
+            }
+            
+            rootViewController.dismiss(animated: true) {
+                promise.resolve()
+            }
         }
     }
 
