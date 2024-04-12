@@ -1,40 +1,51 @@
 import * as ExpoInAppProvisioning from "expo-in-app-provisioning";
-import { useEffect } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Button, StyleSheet, Text, View } from "react-native";
 
 export default function App() {
+  const [canAddCard, setCanAddCard] = useState(false);
   useEffect(() => {
     (async () => {
       try {
-        const res = await ExpoInAppProvisioning.getTokenStatus("Test");
-        console.log("getTokenStatus", res);
+        const res = await ExpoInAppProvisioning.canAddCard("Test");
+        setCanAddCard(res !== ExpoInAppProvisioning.StatusCode.UNAVAILABLE);
       } catch (e) {
         console.error(e);
       }
-      try {
-        const res = await ExpoInAppProvisioning.getActiveWalletId();
-        console.log("getActiveWalletId", res);
-      } catch (e) {
-        console.error(e);
-      }
-      try {
-        const res = await ExpoInAppProvisioning.getStableHardwareId();
-        console.log("getStableHardwareId", res);
-      } catch (e) {
-        console.error(e);
-      }
-      // try {
-      //   const res = await ExpoInAppProvisioning.pushProvision();
-      //   console.log("pushProvision", res);
-      // } catch (e) {
-      //   console.error(e);
-      // }
     })();
   });
+
+  const handleInitialize = async () => {
+    try {
+      const res = await ExpoInAppProvisioning.initialize({
+        cardholderName: "John Doe",
+        localizedDescription: "My Card",
+        lastFour: "1234",
+        cardId: "1234567890",
+      });
+      console.log("initialize", res);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handlePushProvision = async () => {
+    try {
+      const res = await ExpoInAppProvisioning.pushProvision({
+        activationData: "",
+        encryptedPassData: "",
+        ephemeralPublicKey: "",
+      });
+      console.log("pushProvision", res);
+    } catch (e) {
+      console.error(e);
+    }
+  };
   return (
     <View style={styles.container}>
-      <Text>Test!</Text>
-      <Text>...</Text>
+      <Text>Can add cards? {canAddCard ? "Yes" : "No"}</Text>
+      <Button title="Initialize" onPress={handleInitialize} />
+      <Button title="Push provision" onPress={handlePushProvision} />
     </View>
   );
 }

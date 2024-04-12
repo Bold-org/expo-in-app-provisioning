@@ -26,12 +26,11 @@ const AndroidStatusCodeMap = {
   [AndroidStatusCode.TAP_AND_PAY_UNAVAILABLE]: StatusCode.UNAVAILABLE,
 };
 
-export const canAddCard = async (token: string): Promise<boolean> => {
-  if (Platform.OS === "ios") {
-    return false;
-  }
-  const status = await ExpoInAppProvisioningModule.getTokenStatus(token);
-  return AndroidStatusCodeMap[status] !== StatusCode.UNAVAILABLE;
+type InitializeProps = {
+  cardholderName: string;
+  localizedDescription: string;
+  lastFour: string;
+  cardId: string;
 };
 
 type IOSInitializeResult = {
@@ -48,14 +47,18 @@ type AndroidInitializeResult = {
 
 type InitializeResult = AndroidInitializeResult | IOSInitializeResult;
 
-export const initialize = async (): Promise<InitializeResult> => {
+export const initialize = async (
+  props?: InitializeProps,
+): Promise<InitializeResult> => {
   if (Platform.OS === "ios") {
-    return {
-      leafCertificate: "",
-      nonce: "",
-      nonceSignature: "",
-      subCACertificate: "",
-    };
+    const { leafCertificate, nonce, nonceSignature, subCACertificate } =
+      await ExpoInAppProvisioningModule.presentAddPaymentPassViewController(
+        props?.cardholderName,
+        props?.localizedDescription,
+        props?.lastFour,
+        props?.cardId,
+      );
+    return { leafCertificate, nonce, nonceSignature, subCACertificate };
   }
   let hardwareId: string | null = null;
   const walletId = await getActiveWalletId();
@@ -65,7 +68,21 @@ export const initialize = async (): Promise<InitializeResult> => {
   return { walletId, hardwareId };
 };
 
-export const getTokenStatus = async (token: string): Promise<StatusCode> => {
+export const canAddCard = async (token: string): Promise<StatusCode> => {
+  if (Platform.OS === "ios") {
+    const isAvailable = await ExpoInAppProvisioningModule.isAvailable();
+    if (!isAvailable) {
+      return StatusCode.UNAVAILABLE;
+    }
+    if (await ExpoInAppProvisioningModule.canAddCard(token)) {
+      return StatusCode.AVAILABLE;
+    }
+    return StatusCode.NEEDS_SETUP;
+  }
+  return await getTokenStatus(token);
+};
+
+const getTokenStatus = async (token: string): Promise<StatusCode> => {
   if (Platform.OS === "ios") {
     return StatusCode.UNAVAILABLE;
   }
@@ -73,16 +90,16 @@ export const getTokenStatus = async (token: string): Promise<StatusCode> => {
   return AndroidStatusCodeMap[status];
 };
 
-export const getActiveWalletId = async (): Promise<string> => {
+const getActiveWalletId = async (): Promise<string> => {
   if (Platform.OS === "ios") {
-    return "";
+    throw new Error("Not supported on iOS");
   }
   return await ExpoInAppProvisioningModule.getActiveWalletId();
 };
 
-export const getStableHardwareId = async (): Promise<string> => {
+const getStableHardwareId = async (): Promise<string> => {
   if (Platform.OS === "ios") {
-    return "";
+    throw new Error("Not supported on iOS");
   }
   return await ExpoInAppProvisioningModule.getStableHardwareId();
 };
@@ -113,7 +130,11 @@ export const pushProvision = async (
   if (Platform.OS === "ios") {
     const { activationData, ephemeralPublicKey, encryptedPassData } =
       props as IOSPushProvisionProps;
-    return false;
+    return await ExpoInAppProvisioningModule.pushProvision(
+      activationData,
+      ephemeralPublicKey,
+      encryptedPassData,
+    );
   }
 
   const {
