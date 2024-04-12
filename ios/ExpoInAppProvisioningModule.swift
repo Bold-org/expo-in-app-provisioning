@@ -40,7 +40,7 @@ public class ExpoInAppProvisioningModule: Module {
         }
 
         AsyncFunction("dismissAddPaymentPassViewController") { (promise: Promise) -> Void in
-            return paymentPass.dismissAddPaymentPassViewController()
+            return paymentPass.dismissAddPaymentPassViewController(promise: promise)
         }
         
         AsyncFunction("pushProvision") { (
