@@ -109,7 +109,7 @@ class ExpoInAppProvisioningModule : Module() {
   fun getTokenStatus(token: String?, promise: Promise) {
     // Call to check the status of the input token
     tapAndPayClient
-            ?.getTokenStatus(0, token!!)
+            ?.getTokenStatus(TapAndPay.TOKEN_PROVIDER_VISA, token!!)
             ?.addOnCompleteListener { task ->
               if (task.isSuccessful) {
                 @TokenState val tokenStateInt = task.result.tokenState
