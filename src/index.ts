@@ -26,26 +26,26 @@ const AndroidStatusCodeMap = {
   [AndroidStatusCode.TAP_AND_PAY_UNAVAILABLE]: StatusCode.UNAVAILABLE,
 };
 
-type InitializeProps = {
+export type InitializeProps = {
   cardholderName: string;
   localizedDescription: string;
   lastFour: string;
   cardId: string;
 };
 
-type IOSInitializeResult = {
+export type IOSInitializeResult = {
   leafCertificate: string;
   nonce: string;
   nonceSignature: string;
   subCACertificate: string;
 };
 
-type AndroidInitializeResult = {
+export type AndroidInitializeResult = {
   walletId: string | null;
   hardwareId: string | null;
 };
 
-type InitializeResult = AndroidInitializeResult | IOSInitializeResult;
+export type InitializeResult = AndroidInitializeResult | IOSInitializeResult;
 
 export const initialize = async (
   props?: InitializeProps,
