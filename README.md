@@ -34,7 +34,7 @@ Initializes the payment pass provisioning process. On iOS, presents the add paym
 
 #### Parameters:
 
-- `props` (optional): An object containing initialization properties.
+- `props` (optional for Android): An object containing initialization properties.
   - `cardholderName` (string): The name of the cardholder.
   - `localizedDescription` (string): A localized description of the card.
   - `lastFour` (string): The last four digits of the card.
@@ -42,7 +42,9 @@ Initializes the payment pass provisioning process. On iOS, presents the add paym
 
 #### Returns:
 
-A promise that resolves to an `InitializeResult` object on success or `null` if the initialization fails.
+A promise that resolves to an `InitializeResult` object on success or throws an error if it fails.
+
+Note: It resolves to `null` on iOS if the operation is canceled.
 
 ---
 

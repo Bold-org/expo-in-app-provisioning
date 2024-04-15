@@ -1,5 +1,3 @@
-// Import the native module. On web, it will be resolved to ExpoInAppProvisioning.web.ts
-// and on native platforms to ExpoInAppProvisioning.ts
 import { Platform } from "react-native";
 
 import ExpoInAppProvisioningModule from "./ExpoInAppProvisioningModule";
@@ -51,6 +49,9 @@ export const initialize = async (
   props?: InitializeProps,
 ): Promise<InitializeResult | null> => {
   if (Platform.OS === "ios") {
+    if (!props) {
+      throw new Error("iOS requires props");
+    }
     const res =
       (await ExpoInAppProvisioningModule.presentAddPaymentPassViewController(
         props?.cardholderName,
