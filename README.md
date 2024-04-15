@@ -52,7 +52,7 @@ Note: It resolves to `null` on iOS if the operation is canceled.
 
 #### Description:
 
-Dismisses the add payment pass view controller on iOS. `iOS only`
+Dismisses the add payment pass view controller on iOS. You may want to call it if anything else on the process fails (backend requests, for instance). `iOS only`
 
 #### Parameters:
 
