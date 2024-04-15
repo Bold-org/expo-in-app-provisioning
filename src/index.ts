@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 
 import ExpoInAppProvisioningModule from "./ExpoInAppProvisioningModule";
 
-export enum AndroidStatusCode {
+enum AndroidStatusCode {
   TAP_AND_PAY_NO_ACTIVE_WALLET = "TAP_AND_PAY_NO_ACTIVE_WALLET",
   TAP_AND_PAY_TOKEN_NOT_FOUND = "TAP_AND_PAY_TOKEN_NOT_FOUND",
   TAP_AND_PAY_INVALID_TOKEN_STATE = "TAP_AND_PAY_INVALID_TOKEN_STATE",

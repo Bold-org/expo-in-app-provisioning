@@ -112,16 +112,6 @@ A promise that resolves to `true` if the wallet app is successfully opened, `fal
 
 ### Enums
 
-#### `AndroidStatusCode`
-
-| Enum Value                        | Description                                    |
-| --------------------------------- | ---------------------------------------------- |
-| `TAP_AND_PAY_NO_ACTIVE_WALLET`    | Indicates no active wallet for tap and pay.    |
-| `TAP_AND_PAY_TOKEN_NOT_FOUND`     | Indicates token not found for tap and pay.     |
-| `TAP_AND_PAY_INVALID_TOKEN_STATE` | Indicates invalid token state for tap and pay. |
-| `TAP_AND_PAY_ATTESTATION_ERROR`   | Indicates attestation error for tap and pay.   |
-| `TAP_AND_PAY_UNAVAILABLE`         | Indicates tap and pay is unavailable.          |
-
 #### `StatusCode`
 
 | Enum Value    | Description                |
