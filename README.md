@@ -88,6 +88,10 @@ Initiates the push provisioning process for adding a payment pass.
     - `postalCode` (string): The postal code associated with the card.
     - `phone` (string): The phone number associated with the card.
 
+#### Returns:
+
+A promise that resolves to `true` if the push provisioning is successful, `false` otherwise.
+
 ---
 
 ### `openWallet`
@@ -103,12 +107,6 @@ None
 #### Returns:
 
 A promise that resolves to `true` if the wallet app is successfully opened, `false` otherwise.
-
----
-
-#### Returns:
-
-A promise that resolves to `true` if the push provisioning is successful, `false` otherwise.
 
 ---
 
