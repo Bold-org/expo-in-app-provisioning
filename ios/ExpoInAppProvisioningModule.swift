@@ -140,7 +140,7 @@ class PaymentPass: NSObject {
         successCallback = promise.resolve
         errorCallback = promise.legacyRejecter
         
-        if let activationData = Data(base64Encoded: activationDataString),
+        if let activationData = activationDataString.data(using: .utf8),
            let encryptedPassData = Data(base64Encoded: encryptedPassDataString),
            let ephemeralPublicKey = Data(base64Encoded: ephemeralPublicKeyString) {
             
@@ -159,7 +159,7 @@ class PaymentPass: NSObject {
         } else {
             promise.reject("Invalid base64 data", "Failed to decode base64 data")
         }
-        
+
         self.successCallback = nil
         self.errorCallback = nil
     }
