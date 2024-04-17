@@ -155,8 +155,8 @@ export const pushProvision = async (
       props as IOSPushProvisionProps;
     return await ExpoInAppProvisioningModule.pushProvision(
       activationData,
-      ephemeralPublicKey,
       encryptedPassData,
+      ephemeralPublicKey,
     );
   }
 
