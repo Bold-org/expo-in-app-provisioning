@@ -214,23 +214,25 @@ extension PaymentPass: PKAddPaymentPassViewControllerDelegate {
             self.hasBeenInitialized = false
             self.errorCallback?("Error getting data", "Could not initialize process", nil)
         }
+        self.successCallback = nil
+        self.errorCallback = nil
     }
     
     func addPaymentPassViewController(_ controller: PKAddPaymentPassViewController, didFinishAdding pass: PKPaymentPass?, error: Error?) {
         NSLog("pass: \(String(describing: pass)) | error: \(String(describing: error))")
         
-        PKAddPaymentPassViewController().dismiss(animated: true)
         controller.dismiss(animated: true) {
-            if let pass = pass {
+            if !self.hasBeenInitialized || pass != nil {
+                // Call successCallback if hasBeenInitialized is false or pass is available
                 self.successCallback?(pass)
-                return
-            }
-            if self.hasBeenInitialized, let error = error {
+            } else if let error = error {
+                // Call errorCallback if an error occurred
                 self.errorCallback?("addingPassFailed", "Failed to add card", error)
-                return
             }
-            // cancelled
-            self.successCallback?(nil)
+            
+            self.successCallback = nil
+            self.errorCallback = nil
+            // Reset initialization flag
             self.hasBeenInitialized = false
         }
     }
