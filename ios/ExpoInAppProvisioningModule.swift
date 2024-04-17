@@ -159,6 +159,9 @@ class PaymentPass: NSObject {
         } else {
             promise.reject("Invalid base64 data", "Failed to decode base64 data")
         }
+        
+        self.successCallback = nil
+        self.errorCallback = nil
     }
     
     func dismissAddPaymentPassViewController(promise: Promise) {
