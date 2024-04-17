@@ -98,11 +98,10 @@ export const canAddCard = async (token: string): Promise<StatusCode> => {
   try {
     return await getTokenStatus(token);
   } catch (e) {
-    console.error(e);
     if (e.message === "Token not found") {
       return StatusCode.AVAILABLE;
     }
-    return StatusCode.UNAVAILABLE;
+    throw e;
   }
 };
 
