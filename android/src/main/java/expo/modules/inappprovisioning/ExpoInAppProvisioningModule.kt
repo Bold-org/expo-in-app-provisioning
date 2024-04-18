@@ -130,7 +130,7 @@ class ExpoInAppProvisioningModule : Module() {
                     break
                   }
                 }
-                promise.resolve(found)
+                promise.resolve(!found)
               } else {
                 promise.reject("CAN_ADD_TOKEN_ERROR", "Could not verify token existence in Google Pay: " + task.exception?.message, Error("CAN_ADD_TOKEN_ERROR"))
               }
