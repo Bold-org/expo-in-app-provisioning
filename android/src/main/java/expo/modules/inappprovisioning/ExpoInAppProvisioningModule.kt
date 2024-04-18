@@ -10,18 +10,20 @@ import com.google.android.gms.tapandpay.issuer.UserAddress
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import expo.modules.kotlin.records.Field
+import expo.modules.kotlin.records.Record
 
 data class ProvisionParams(
-  val opc: String,
-  val name: String?,
-  val lastDigits: String?,
-  val address: String?,
-  val city: String?,
-  val state: String?,
-  val countryCode: String?,
-  val postalCode: String?,
-  val phone: String?
-)
+  @Field val opc: String,
+  @Field val name: String?,
+  @Field val lastDigits: String?,
+  @Field val address: String?,
+  @Field val city: String?,
+  @Field val state: String?,
+  @Field val countryCode: String?,
+  @Field val postalCode: String?,
+  @Field val phone: String?
+) : Record
 
 class ExpoInAppProvisioningModule : Module() {
   private var tapAndPayClient: TapAndPayClient? = null
