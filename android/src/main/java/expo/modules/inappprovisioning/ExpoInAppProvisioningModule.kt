@@ -11,6 +11,18 @@ import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
+data class ProvisionParams(
+  val opc: String,
+  val name: String?,
+  val lastDigits: String?,
+  val address: String?,
+  val city: String?,
+  val state: String?,
+  val countryCode: String?,
+  val postalCode: String?,
+  val phone: String?
+)
+
 class ExpoInAppProvisioningModule : Module() {
   private var tapAndPayClient: TapAndPayClient? = null
   private val tapAndPayStringMap = HashMap<Int, String>()
@@ -40,11 +52,9 @@ class ExpoInAppProvisioningModule : Module() {
       getStableHardwareId(promise)
     }
 
-    AsyncFunction("pushProvision") {
-      { opc: String, name: String?, lastDigits: String?, address: String?, city: String?, state: String?,
-        countryCode: String?, postalCode: String?, phone: String?, promise: Promise ->
-        pushProvision(opc, name, lastDigits, address, city, state, countryCode, postalCode, phone, promise)
-      }
+    AsyncFunction("pushProvision") { params: ProvisionParams, promise: Promise ->
+      pushProvision(params.opc, params.name, params.lastDigits, params.address, params.city, params.state,
+        params.countryCode, params.postalCode, params.phone, promise)
     }
   }
 

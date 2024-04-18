@@ -160,27 +160,5 @@ export const pushProvision = async (
     );
   }
 
-  const {
-    opc,
-    name,
-    lastDigits,
-    address,
-    city,
-    state,
-    countryCode,
-    postalCode,
-    phone,
-  } = props as AndroidPushProvisionProps;
-
-  return await ExpoInAppProvisioningModule.pushProvision(
-    opc,
-    name,
-    lastDigits,
-    address,
-    city,
-    state,
-    countryCode,
-    postalCode,
-    phone,
-  );
+  return await ExpoInAppProvisioningModule.pushProvision(props);
 };
