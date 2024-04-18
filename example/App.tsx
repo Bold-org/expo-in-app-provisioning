@@ -8,7 +8,7 @@ export default function App() {
     (async () => {
       try {
         const res = await ExpoInAppProvisioning.canAddCard("Test");
-        setCanAddCard(res !== ExpoInAppProvisioning.StatusCode.UNAVAILABLE);
+        setCanAddCard(res);
       } catch (e) {
         console.error(e);
       }

@@ -84,28 +84,11 @@ export const openWallet = async (): Promise<boolean> => {
   return false;
 };
 
-export const canAddCard = async (token: string): Promise<StatusCode> => {
-  if (Platform.OS === "ios") {
-    const isAvailable = await ExpoInAppProvisioningModule.isAvailable();
-    if (!isAvailable) {
-      return StatusCode.UNAVAILABLE;
-    }
-    if (await ExpoInAppProvisioningModule.canAddCard(token)) {
-      return StatusCode.AVAILABLE;
-    }
-    return StatusCode.NEEDS_SETUP;
-  }
-  try {
-    return await getTokenStatus(token);
-  } catch (e) {
-    if (e.message === "Token not found") {
-      return StatusCode.AVAILABLE;
-    }
-    throw e;
-  }
+export const canAddCard = async (token: string): Promise<boolean> => {
+  return await ExpoInAppProvisioningModule.canAddCard(token);
 };
 
-const getTokenStatus = async (token: string): Promise<StatusCode> => {
+export const getTokenStatus = async (token: string): Promise<StatusCode> => {
   if (Platform.OS === "ios") {
     return StatusCode.UNAVAILABLE;
   }

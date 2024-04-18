@@ -42,6 +42,10 @@ class ExpoInAppProvisioningModule : Module() {
 
     Name("ExpoInAppProvisioning")
 
+    AsyncFunction("canAddCard") { token: String, promise: Promise ->
+        canAddToken(token, promise)
+    }
+    
     AsyncFunction("getTokenStatus") { token: String, promise: Promise ->
         getTokenStatus(token, promise)
     }
@@ -113,6 +117,26 @@ class ExpoInAppProvisioningModule : Module() {
               }
             }
   }
+
+  fun canAddToken(tokenString: String?, promise: Promise) {
+    tapAndPayClient
+            ?.listTokens()
+            ?.addOnCompleteListener { task ->
+              if (task.isSuccessful) {
+                var found = false
+                for (token in task.result) {
+                  found = token.issuerTokenId == tokenString
+                  if (found) {
+                    break
+                  }
+                }
+                promise.resolve(found)
+              } else {
+                promise.reject("CAN_ADD_TOKEN_ERROR", "Could not verify token existence in Google Pay: " + task.exception?.message, Error("CAN_ADD_TOKEN_ERROR"))
+              }
+            }
+  }
+
   /**
    * This method checks the status of a given token.
    * See the documentation here:
@@ -131,7 +155,7 @@ class ExpoInAppProvisioningModule : Module() {
                 if (apiException!!.statusCode == TapAndPayStatusCodes.TAP_AND_PAY_TOKEN_NOT_FOUND) {
                   promise.reject("TOKEN_STATUS_ERROR", "Token not found", Error("TOKEN_STATUS_ERROR"))
                 } else {
-                  promise.reject("TOKEN_STATUS_ERROR", "Could not get token status  " + apiException.status.statusMessage, Error("TOKEN_STATUS_ERROR"))
+                  promise.reject("TOKEN_STATUS_ERROR", "Could not get token status: " + apiException.status.statusMessage, Error("TOKEN_STATUS_ERROR"))
                 }
               }
             }
