@@ -15,11 +15,14 @@ public class ExpoInAppProvisioningModule: Module {
             return paymentPass.canAddPaymentPass()
         }
         
-        AsyncFunction("canAddCard") { (cardId: String) -> Bool in
+        AsyncFunction("canAddCard") { (cardId: String, promise: Promise) -> Promise in
             if !paymentPass.canAddPaymentPass() {
-                return false
+                promise.reject("canAddCard Error", "The device does not support adding payment passes")
+            } else {
+                let canAddCard = paymentPass.canAddPaymentPass(withPrimaryAccountIdentifier: cardId)
+                promise.resolve(canAddCard)
             }
-            return paymentPass.canAddPaymentPass(withPrimaryAccountIdentifier: cardId)
+            return promise
         }
         
         AsyncFunction("presentAddPaymentPassViewController") { (
