@@ -14,13 +14,15 @@ public class ExpoInAppProvisioningModule: Module {
         AsyncFunction("isAvailable") { () -> Bool in
             return paymentPass.canAddPaymentPass()
         }
-        
-        AsyncFunction("canAddCard") { (cardId: String, promise: Promise) -> Promise in
+
+        AsyncFunction("canAddCard") { (cardId: String?, promise: Promise) -> Promise in
             if !paymentPass.canAddPaymentPass() {
                 promise.reject("canAddCard Error", "The device does not support adding payment passes")
-            } else {
+            } else if !(cardId ?? "").isEmpty {
                 let canAddCard = paymentPass.canAddPaymentPass(withPrimaryAccountIdentifier: cardId)
                 promise.resolve(canAddCard)
+            } else {
+                promise.resolve(true)
             }
             return promise
         }

@@ -84,7 +84,7 @@ export const openWallet = async (): Promise<boolean> => {
   return false;
 };
 
-export const canAddCard = async (token: string): Promise<boolean> => {
+export const canAddCard = async (token?: string): Promise<boolean> => {
   return await ExpoInAppProvisioningModule.canAddCard(token);
 };
 

@@ -42,7 +42,7 @@ class ExpoInAppProvisioningModule : Module() {
 
     Name("ExpoInAppProvisioning")
 
-    AsyncFunction("canAddCard") { token: String, promise: Promise ->
+    AsyncFunction("canAddCard") { token: String?, promise: Promise ->
         canAddToken(token, promise)
     }
     
