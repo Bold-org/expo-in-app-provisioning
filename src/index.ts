@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 
 import ExpoInAppProvisioningModule from "./ExpoInAppProvisioningModule";
 
-enum AndroidStatusCode {
+export enum AndroidTokenStateError {
   TAP_AND_PAY_NO_ACTIVE_WALLET = "TAP_AND_PAY_NO_ACTIVE_WALLET",
   TAP_AND_PAY_TOKEN_NOT_FOUND = "TAP_AND_PAY_TOKEN_NOT_FOUND",
   TAP_AND_PAY_INVALID_TOKEN_STATE = "TAP_AND_PAY_INVALID_TOKEN_STATE",
@@ -10,19 +10,14 @@ enum AndroidStatusCode {
   TAP_AND_PAY_UNAVAILABLE = "TAP_AND_PAY_UNAVAILABLE",
 }
 
-export enum StatusCode {
-  AVAILABLE = "AVAILABLE",
-  UNAVAILABLE = "UNAVAILABLE",
-  NEEDS_SETUP = "NEEDS_SETUP",
+export enum AndroidTokenState {
+  TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION = "TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION",
+  TOKEN_STATE_PENDING = "TOKEN_STATE_PENDING",
+  TOKEN_STATE_ACTIVE = "TOKEN_STATE_ACTIVE",
+  TOKEN_STATE_SUSPENDED = "TOKEN_STATE_SUSPENDED",
+  TOKEN_STATE_FELICA_PENDING_PROVISIONING = "TOKEN_STATE_FELICA_PENDING_PROVISIONING",
+  TOKEN_STATE_UNTOKENIZED = "TOKEN_STATE_UNTOKENIZED",
 }
-
-const AndroidStatusCodeMap = {
-  [AndroidStatusCode.TAP_AND_PAY_ATTESTATION_ERROR]: StatusCode.UNAVAILABLE,
-  [AndroidStatusCode.TAP_AND_PAY_INVALID_TOKEN_STATE]: StatusCode.AVAILABLE,
-  [AndroidStatusCode.TAP_AND_PAY_NO_ACTIVE_WALLET]: StatusCode.NEEDS_SETUP,
-  [AndroidStatusCode.TAP_AND_PAY_TOKEN_NOT_FOUND]: StatusCode.AVAILABLE,
-  [AndroidStatusCode.TAP_AND_PAY_UNAVAILABLE]: StatusCode.UNAVAILABLE,
-};
 
 export type InitializeProps = {
   cardholderName: string;
@@ -85,15 +80,31 @@ export const openWallet = async (): Promise<boolean> => {
 };
 
 export const canAddCard = async (token?: string): Promise<boolean> => {
-  return await ExpoInAppProvisioningModule.canAddCard(token);
+  if (Platform.OS === "ios" || !token) {
+    return await ExpoInAppProvisioningModule.canAddCard(token);
+  }
+  try {
+    const status = await getTokenStatus(token);
+    return [
+      AndroidTokenState.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION,
+      AndroidTokenState.TOKEN_STATE_PENDING,
+      AndroidTokenState.TOKEN_STATE_UNTOKENIZED,
+    ].includes(status as AndroidTokenState);
+  } catch (e) {
+    if (e.message === "Token not found") {
+      return true;
+    }
+    throw e;
+  }
 };
 
-export const getTokenStatus = async (token: string): Promise<StatusCode> => {
+export const getTokenStatus = async (
+  token: string,
+): Promise<AndroidTokenState | AndroidTokenStateError> => {
   if (Platform.OS === "ios") {
-    return StatusCode.UNAVAILABLE;
+    throw new Error("Not supported on iOS");
   }
-  const status = await ExpoInAppProvisioningModule.getTokenStatus(token);
-  return AndroidStatusCodeMap[status];
+  return await ExpoInAppProvisioningModule.getTokenStatus(token);
 };
 
 const getActiveWalletId = async (): Promise<string> => {
