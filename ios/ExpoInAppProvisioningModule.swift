@@ -3,14 +3,14 @@ import PassKit
 
 public class ExpoInAppProvisioningModule: Module {
     var paymentPass = PaymentPass()
-    
+
     public func definition() -> ModuleDefinition {
         Name("ExpoInAppProvisioning")
-        
+
         AsyncFunction("openWallet") { () -> Bool in
             return paymentPass.openWallet()
         }
-        
+
         AsyncFunction("isAvailable") { () -> Bool in
             return paymentPass.canAddPaymentPass()
         }
@@ -18,15 +18,17 @@ public class ExpoInAppProvisioningModule: Module {
         AsyncFunction("canAddCard") { (cardId: String?, promise: Promise) -> Promise in
             if !paymentPass.canAddPaymentPass() {
                 promise.reject("canAddCard Error", "The device does not support adding payment passes")
-            } else if !(cardId ?? "").isEmpty {
-                let canAddCard = paymentPass.canAddPaymentPass(withPrimaryAccountIdentifier: cardId)
-                promise.resolve(canAddCard)
-            } else {
-                promise.resolve(true)
+            } else if let unwrappedCardId = cardId {
+              if !unwrappedCardId.isEmpty {
+                  let canAddCard = paymentPass.canAddPaymentPass(withPrimaryAccountIdentifier: unwrappedCardId)
+                  promise.resolve(canAddCard)
+              } else {
+                  promise.resolve(true)
+              }
             }
             return promise
         }
-        
+
         AsyncFunction("presentAddPaymentPassViewController") { (
             cardholderName: String,
             localizedDescription: String,
@@ -47,7 +49,7 @@ public class ExpoInAppProvisioningModule: Module {
         AsyncFunction("dismissAddPaymentPassViewController") { (promise: Promise) -> Void in
             return paymentPass.dismissAddPaymentPassViewController(promise: promise)
         }
-        
+
         AsyncFunction("pushProvision") { (
             activationDataString: String,
             encryptedPassDataString: String,
@@ -71,7 +73,7 @@ class PaymentPass: NSObject {
     var successCallback: EXPromiseResolveBlock?
     var errorCallback: EXPromiseRejectBlock?
     var hasBeenInitialized = false
-    
+
     func canAddPaymentPass() -> Bool {
         if #available(iOS 9.0, *) {
             return PKAddPaymentPassViewController.canAddPaymentPass()
@@ -79,7 +81,7 @@ class PaymentPass: NSObject {
             return false
         }
     }
-    
+
     func canAddPaymentPass(withPrimaryAccountIdentifier cardId: String) -> Bool {
         let library = PKPassLibrary()
         if #available(iOS 13.4, *) {
@@ -91,7 +93,7 @@ class PaymentPass: NSObject {
             return false
         }
     }
-    
+
     func openWallet() -> Bool {
         let library = PKPassLibrary()
         if #available(iOS 8.3, *) {
@@ -101,7 +103,7 @@ class PaymentPass: NSObject {
             return false
         }
     }
-    
+
     func presentAddPaymentPassViewController(
         cardholderName: String,
         localizedDescription: String,
@@ -111,19 +113,19 @@ class PaymentPass: NSObject {
     ) {
         successCallback = promise.resolve
         errorCallback = promise.legacyRejecter
-        
+
         let configuration = PKAddPaymentPassRequestConfiguration(encryptionScheme: .ECC_V2)
         configuration!.cardholderName = cardholderName
         configuration!.localizedDescription = localizedDescription
         configuration!.paymentNetwork = .visa
         configuration!.primaryAccountSuffix = primaryAccountSuffix
         configuration!.primaryAccountIdentifier = primaryAccountIdentifier
-        
+
         let passView = PKAddPaymentPassViewController(
             requestConfiguration: configuration!,
             delegate: self
         )
-        
+
         if passView != nil {
             DispatchQueue.main.async {
                 // Find the appropriate window to present the view controller
@@ -135,25 +137,25 @@ class PaymentPass: NSObject {
             promise.reject("Payment pass view creation error", "Unable to create the view")
         }
     }
-    
+
     func callAddPaymentPassRequestHandler(
-        activationDataString: String, 
+        activationDataString: String,
         encryptedPassDataString: String,
         ephemeralPublicKeyString: String,
         promise: Promise
     ) {
         successCallback = promise.resolve
         errorCallback = promise.legacyRejecter
-        
+
         if let activationData = Data(base64Encoded: activationDataString),
            let encryptedPassData = Data(base64Encoded: encryptedPassDataString),
            let ephemeralPublicKey = Data(base64Encoded: ephemeralPublicKeyString) {
-            
+
             let paymentPassRequest = PKAddPaymentPassRequest()
             paymentPassRequest.activationData = activationData
             paymentPassRequest.encryptedPassData = encryptedPassData
             paymentPassRequest.ephemeralPublicKey = ephemeralPublicKey
-            
+
             if let completionHandler = self.addPaymentPassRequestCompletionHandler {
                 completionHandler(paymentPassRequest)
                 promise.resolve(true)
@@ -164,28 +166,28 @@ class PaymentPass: NSObject {
         } else {
             promise.reject("Invalid base64 data", "Failed to decode base64 data")
         }
-        
+
         self.successCallback = nil
         self.errorCallback = nil
     }
-    
+
     func dismissAddPaymentPassViewController(promise: Promise) {
         DispatchQueue.main.async {
             guard let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
                 promise.reject("AddPaymentPassViewController dismissal error", "AddPaymentPassViewController was not dismissed")
                 return
             }
-            
+
             guard let rootViewController = window.rootViewController else {
                 promise.reject("AddPaymentPassViewController dismissal error", "AddPaymentPassViewController was not dismissed")
                 return
             }
-            
+
             guard let presentedViewController = rootViewController.presentedViewController else {
                 promise.reject("AddPaymentPassViewController dismissal error", "AddPaymentPassViewController was not dismissed")
                 return
             }
-            
+
             rootViewController.dismiss(animated: true) {
                 self.hasBeenInitialized = false
                 promise.resolve()
@@ -198,16 +200,16 @@ class PaymentPass: NSObject {
 extension PaymentPass: PKAddPaymentPassViewControllerDelegate {
     func addPaymentPassViewController(_ controller: PKAddPaymentPassViewController, generateRequestWithCertificateChain certificates: [Data], nonce: Data, nonceSignature: Data, completionHandler handler: @escaping (PKAddPaymentPassRequest) -> Void) {
         NSLog("addPaymentPassViewController delegate to generate cert chain, nonce, and nonce signature")
-        
+
         self.hasBeenInitialized = true
         self.addPaymentPassRequestCompletionHandler = handler
-        
+
         // The leaf certificate will be the first element of that array and the sub-CA certificate will follow.
         let leafCertData = certificates.first?.base64EncodedString()
         let subCACertData = certificates.dropFirst().first?.base64EncodedString()
         let nonceData = nonce.base64EncodedString()
         let nonceSigData = nonceSignature.base64EncodedString()
-        
+
         if ((leafCertData != nil) && (subCACertData != nil)) {
             let args: [String: Any] = [
                 "leafCertificate": leafCertData!,
@@ -215,7 +217,7 @@ extension PaymentPass: PKAddPaymentPassViewControllerDelegate {
                 "nonce": nonceData,
                 "nonceSignature": nonceSigData
             ]
-            
+
             NSLog("Event send to JS with certs, nonce, and nonceSignature")
             self.successCallback?(args)
         } else {
@@ -225,10 +227,10 @@ extension PaymentPass: PKAddPaymentPassViewControllerDelegate {
         self.successCallback = nil
         self.errorCallback = nil
     }
-    
+
     func addPaymentPassViewController(_ controller: PKAddPaymentPassViewController, didFinishAdding pass: PKPaymentPass?, error: Error?) {
         NSLog("pass: \(String(describing: pass)) | error: \(String(describing: error))")
-        
+
         controller.dismiss(animated: true) {
             if !self.hasBeenInitialized || pass != nil {
                 // Call successCallback if hasBeenInitialized is false or pass is available
@@ -237,7 +239,7 @@ extension PaymentPass: PKAddPaymentPassViewControllerDelegate {
                 // Call errorCallback if an error occurred
                 self.errorCallback?("addingPassFailed", "Failed to add card", error)
             }
-            
+
             self.successCallback = nil
             self.errorCallback = nil
             // Reset initialization flag
