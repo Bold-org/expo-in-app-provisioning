@@ -19,12 +19,14 @@ public class ExpoInAppProvisioningModule: Module {
             if !paymentPass.canAddPaymentPass() {
                 promise.reject("canAddCard Error", "The device does not support adding payment passes")
             } else if let unwrappedCardId = cardId {
-              if !unwrappedCardId.isEmpty {
-                  let canAddCard = paymentPass.canAddPaymentPass(withPrimaryAccountIdentifier: unwrappedCardId)
-                  promise.resolve(canAddCard)
-              } else {
-                  promise.resolve(true)
-              }
+                if !unwrappedCardId.isEmpty {
+                    let canAddCard = paymentPass.canAddPaymentPass(withPrimaryAccountIdentifier: unwrappedCardId)
+                    promise.resolve(canAddCard)
+                } else {
+                    promise.resolve(true)
+                }
+            } else {
+                promise.resolve(true)
             }
             return promise
         }
